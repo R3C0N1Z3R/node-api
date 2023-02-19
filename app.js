@@ -8,11 +8,17 @@ const productsRoutes = require("./routes/products");
 const orderRoutes = require("./routes/orders");
 
 
-mongoose.connect("mongodb+srv://node-shop:" + process.env.MONGO_ATLAS_PW + "@node-rest-shop.nwrcuqf.mongodb.net/?retryWrites=true&w=majority");
+mongoose.set('strictQuery', false);
+mongoose.connect(
+    "mongodb+srv://node-shop:" +
+    process.env.MONGO_ATLAS_PW +
+    "@node-rest-shop.nwrcuqf.mongodb.net/?retryWrites=true&w=majority");
+
+mongoose.Promise = global.Promise;
 
 
 app.use(morgan("dev"));
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
