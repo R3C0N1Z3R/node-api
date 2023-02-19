@@ -32,26 +32,32 @@ router.post("/", (req, res, next) => {
         name: req.body.name,
         price: req.body.price
     });
-    product.save().then(result => {
-        console.log(result);
-        res.status(201).json({
-            message: "Handling POST request to /products",
-            createdProduct: result
-        });
-    }).catch(err => {
-        console.log(err);
-        res.status(500).json({
-            error: err
+    product
+        .save()
+        .then(result => {
+            console.log(result);
+            res.status(201).json(result);
         })
-    });
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            })
+        });
 });
 
 router.get("/:productId", (req, res, next) => {
     const id = req.params.productId;
-    Product.findById(id).exec().then(doc => {
+    Product.findById(id).select("name price _id").exec().then(doc => {
         console.log("From database", doc);
         if (doc) {
-            res.status(200).json(doc);
+            res.status(200).json({
+                product: doc,
+                request: {
+                    type: "GET",
+                    url: "http://localhost:2000/products"
+                }
+            });
         } else {
             res.status(404).json({message: "No valid entry found for provided ID"});
         }
