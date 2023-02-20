@@ -4,8 +4,8 @@ const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
-const productsRoutes = require("./routes/products");
-const orderRoutes = require("./routes/orders");
+const usersRoutes = require("./routes/users");
+const postsRoutes = require("./routes/post");
 
 
 mongoose.set('strictQuery', false);
@@ -18,6 +18,7 @@ mongoose.Promise = global.Promise;
 
 
 app.use(morgan("dev"));
+app.use("/uploads", express.static("uploads"));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
@@ -31,8 +32,8 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use("/products", productsRoutes);
-app.use("/orders", orderRoutes);
+app.use("/users", usersRoutes);
+app.use("/posts", postsRoutes);
 
 
 app.use((req, res, next) => {
