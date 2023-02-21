@@ -1,18 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const User = require("../models/user");
 
 router.get("/", (req, res, next) => {
     User.find()
-        .select("forename surname")
+        .select("username password forename surname")
         .exec()
         .then(docs => {
             const response = {
                 count: docs.length,
-                users: docs.map(doc => {
+                data: docs.map(doc => {
                     return {
+                        username: doc.username,
+                        password: doc.password,
                         forename: doc.forename,
                         surname: doc.surname,
                         _id: doc._id,
@@ -45,6 +48,7 @@ router.post("/", (req, res, next) => {
             res.status(200).json({
                 message: "Created user successfully",
                 createdUser: {
+                    username: result.username,
                     forename: result.forename,
                     surname: result.surname,
                     _id: result._id,
@@ -121,5 +125,47 @@ router.delete("/:userId", (req, res, next) => {
             });
         });
 });
+
+
+router.post("/signup", (req, res, next) => {
+    User.find({username: req.body.username})
+        .exec()
+        .then(user => {
+            if (user.length >= 1) {
+                return res.status(409).json({
+                    message: "Username exists"
+                });
+            } else {
+                bcrypt.hash(req.body.password, 10, (err, hash) => {
+                    if (err) {
+                        return res.status(500).json({
+                            error: err
+                        });
+                    } else {
+                        const user = new User({
+                            _id: new mongoose.Types.ObjectId(),
+                            username: req.body.username,
+                            password: hash
+                        });
+                        user
+                            .save()
+                            .then(result => {
+                                console.log(result);
+                                res.status(201).json({
+                                    message: "User created"
+                                });
+                            })
+                            .catch(err => {
+                                console.log(err);
+                                res.status(500).json({
+                                    error: err
+                                });
+                            });
+                    }
+                });
+            }
+        });
+})
+
 
 module.exports = router;
