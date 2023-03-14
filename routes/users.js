@@ -172,7 +172,7 @@ router.delete("/:userId", (req, res, next) => {
           },
         });
       } else {
-        res.status(500).json({
+        res.status(404).json({
           message: "User not found",
         });
       }
