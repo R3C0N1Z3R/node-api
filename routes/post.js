@@ -8,19 +8,19 @@ const Post = require("../models/post");
 const User = require("../models/user");
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb){
+    destination: function (req, file, cb) {
         cb(null, "uploads/");
     },
-    filename: function (req, file, cb){
-        cb(null, new Date().toISOString().slice(0,10) + file.originalname);
+    filename: function (req, file, cb) {
+        cb(null, new Date().toISOString().slice(0, 10) + file.originalname);
     }
 });
 
 
 const fileFilter = (req, file, cb) => {
-    if(file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "image/jpg"){
+    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "image/jpg") {
         cb(null, true);
-    } else{
+    } else {
         cb(new Error("Image Type not supported"), false)
     }
 };
@@ -33,6 +33,8 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
+//USE data FOR ALL RESPONSE
+
 router.get("/", (req, res, next) => {
     Post.find()
         .select("title image user postImage")
@@ -43,7 +45,7 @@ router.get("/", (req, res, next) => {
                 count: docs.length,
                 data: docs.map(doc => {
                     return {
-                        _id: doc._id,
+                        id: doc._id,
                         title: doc.title,
                         postImage: doc.postImage,
                         user: doc.user,
@@ -71,6 +73,7 @@ router.post("/", upload.single("postImage"), (req, res, next) => {
                     message: "User not found"
                 });
             }
+            console.log(req.body.path);
             const post = new Post({
                 _id: new mongoose.Types.ObjectId(),
                 title: req.body.title,
@@ -129,6 +132,12 @@ router.get("/postId", (req, res, next) => {
         });
 });
 
+router.patch("/:postId", (req, res, next) => {
+    const id = req.params.postId;
+    Post.findByIdAndUpdate(id, {$set: req.body}, {new: true})
+        .then(result => res.status(200).json(result))
+        .catch(err => res.status(500).json({error: err}))
+});
 
 router.delete("/:postId", (req, res, next) => {
     const id = req.params.postId;

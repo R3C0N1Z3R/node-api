@@ -36,35 +36,78 @@ router.get("/", (req, res, next) => {
         });
 });
 
-router.post("/", (req, res, next) => {
-    const user = new User({
-        _id: new mongoose.Types.ObjectId(),
-        forename: req.body.forename,
-        surname: req.body.surname
-    })
-    user.save()
-        .then(result => {
-            console.log(result);
-            res.status(200).json({
-                message: "Created user successfully",
-                createdUser: {
-                    username: result.username,
-                    forename: result.forename,
-                    surname: result.surname,
-                    _id: result._id,
-                    request: {
-                        type: "GET",
-                        url: "http://localhost:2000/users/" + result._id
+router.post("/signup", (req, res, next) => {
+    User.find({username: req.body.username})
+        .exec()
+        .then(user => {
+            if (user.length >= 1) {
+                return res.status(409).json({
+                    message: "Username exists"
+                });
+            } else {
+                bcrypt.hash(req.body.password, 10, (err, hash) => {
+                    if (err) {
+                        return res.status(500).json({
+                            error: err
+                        });
+                    } else {
+                        const user = new User({
+                            _id: new mongoose.Types.ObjectId(),
+                            username: req.body.username,
+                            password: hash
+                        });
+                        user
+                            .save()
+                            .then(result => {
+                                console.log(result);
+                                res.status(201).json({
+                                    message: "User created"
+                                });
+                            })
+                            .catch(err => {
+                                console.log(err);
+                                res.status(500).json({
+                                    error: err
+                                });
+                            });
                     }
+                });
+            }
+        });
+});
+
+router.post("/login",(req, res, next) => {
+    User.find({username: req.body.username})
+        .exec()
+        .then(user => {
+            if(user.length < 1){
+                return res.status(401).json({
+                    message: "Username not found, user doesn\'t exist 1"
+                });
+            }
+            bcrypt.compare(req.body.password, user[0].password, (err, result) => {
+                if(err){
+                    return res.status(401).json({
+                        message: "Auth failed"
+                    });
                 }
-            });
+                console.log(req.body.password, user[0].password, result);
+                if(result){
+                    return res.status(200).json({
+                        message: "Auth successful"
+                    })
+                }
+                return res.status(401).json({
+                    message: "Password incorrect"
+                });
+            })
         })
         .catch(err => {
             console.log(err);
             res.status(500).json({
                 error: err
-            });
-        });
+            })
+        })
 });
 
 
@@ -111,14 +154,21 @@ router.delete("/:userId", (req, res, next) => {
     User.findByIdAndDelete(id)
         .exec()
         .then(result => {
-            res.status(200).json({
-                message: "User was deleted successfully",
-                request: {
-                    type: "DELETE",
-                    url: "http://localhost:2000/users"
-                }
-            })
+            if(result) {
+                res.status(200).json({
+                    message: "User was deleted successfully",
+                    request: {
+                        type: "DELETE",
+                        url: "http://localhost:2000/users"
+                    }
+                })
+            }else{
+                res.status(500).json({
+                    message: "User not found"
+                })
+            }
         })
+
         .catch(err => {
             res.status(500).json({
                 error: err
@@ -127,45 +177,8 @@ router.delete("/:userId", (req, res, next) => {
 });
 
 
-router.post("/signup", (req, res, next) => {
-    User.find({username: req.body.username})
-        .exec()
-        .then(user => {
-            if (user.length >= 1) {
-                return res.status(409).json({
-                    message: "Username exists"
-                });
-            } else {
-                bcrypt.hash(req.body.password, 10, (err, hash) => {
-                    if (err) {
-                        return res.status(500).json({
-                            error: err
-                        });
-                    } else {
-                        const user = new User({
-                            _id: new mongoose.Types.ObjectId(),
-                            username: req.body.username,
-                            password: hash
-                        });
-                        user
-                            .save()
-                            .then(result => {
-                                console.log(result);
-                                res.status(201).json({
-                                    message: "User created"
-                                });
-                            })
-                            .catch(err => {
-                                console.log(err);
-                                res.status(500).json({
-                                    error: err
-                                });
-                            });
-                    }
-                });
-            }
-        });
-})
+
+
 
 
 module.exports = router;
